@@ -26,7 +26,7 @@ LegoPower::LegoPower() {
   pinMode(UART1_PIN, OUTPUT);
   digitalWrite(UART1_PIN, HIGH);
   Serial1.begin(76000);
-  _toggleBit = false;
+  _toggle = false;
 }
 
 void LegoPower::sendSinglePwm(uint8_t channel, uint8_t output, uint8_t command) {
@@ -34,35 +34,44 @@ void LegoPower::sendSinglePwm(uint8_t channel, uint8_t output, uint8_t command) 
 }
 
 void LegoPower::_sendSingleOutput(uint8_t channel, uint8_t output, uint8_t mode, uint8_t command) {
-  _rawMessage = _computeRawMessage(
+  _message = _computeMessage(
     _getNextToggle() | ESCAPE_MODE | channel,
     ADDRESS_DEFAULT | mode | output,
     command
   );
-  _sendRawMessage();
+  _sendMessage();
 }
 
-void LegoPower::_sendRawMessage() {
+void LegoPower::_sendMessage() {
   for(uint8_t transmission = 0; transmission < 5; transmission++) {
-    _delayTransmission();
-    _sendStartBit();
-    for(uint8_t bitIndex = 0; bitIndex < 16; bitIndex++) {
-      if(_getMessageBit(bitIndex)) {
-        _sendHighBit();
-      } else {
-        _sendLowBit();
-      }
-    }
-    _sendStartBit();
+    _sendDelay();
+    _sendStartStopBit();
+    _sendMessageBody();
+    _sendStartStopBit();
+  }
+}
+
+void LegoPower::_sendMessageBody() {
+  _resetNextMessageBit();
+  while(_hasNextMessageBit()) {
+    _sendMessageBit();
+  }
+}
+
+void LegoPower::_sendMessageBit() {
+  if(_getNextMessageBit()) {
+    _sendHighBit();
+  } else {
+    _sendLowBit();
   }
 }
 
 uint8_t LegoPower::_getNextToggle() {
-  _toggleBit = !_toggleBit;
-  return (_toggleBit ? TOGGLE_HIGH : TOGGLE_LOW);
+  _toggle = !_toggle;
+  return (_toggle ? TOGGLE_HIGH : TOGGLE_LOW);
 }
 
-uint16_t LegoPower::_computeRawMessage(
+uint16_t LegoPower::_computeMessage(
   uint8_t nibble1, uint8_t nibble2, uint8_t nibble3
 ) {
   return nibble1 << 12
@@ -77,15 +86,23 @@ uint8_t LegoPower::_computeChecksum(
   return 0xF ^ nibble1 ^ nibble2 ^ nibble3;
 }
 
-bool LegoPower::_getMessageBit(uint8_t bitIndex) {
-  return (UINT16_MSB_MASK & (_rawMessage << bitIndex)) == UINT16_MSB_MASK;
+void LegoPower::_resetNextMessageBit() {
+  _nextMessageBit = 0;
 }
 
-void LegoPower::_delayTransmission() {
+bool LegoPower::_hasNextMessageBit() {
+  return _nextMessageBit < 16;
+}
+
+bool LegoPower::_getNextMessageBit() {
+  return (UINT16_MSB_MASK & (_message << _nextMessageBit++)) == UINT16_MSB_MASK;
+}
+
+void LegoPower::_sendDelay() {
   delay(80);
 }
 
-void LegoPower::_sendStartBit() {
+void LegoPower::_sendStartStopBit() {
   _sendBit(CYCLES_START);
 }
 

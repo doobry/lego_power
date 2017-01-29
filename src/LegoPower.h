@@ -37,20 +37,26 @@ class LegoPower
 
   private:
     void _sendSingleOutput(uint8_t channel, uint8_t output, uint8_t mode, uint8_t command);
-    void _sendRawMessage();
+    void _sendMessage();
     uint8_t _getNextToggle();
-    uint16_t _computeRawMessage(uint8_t nibble1, uint8_t nibble2, uint8_t nibble3);
+    uint16_t _computeMessage(uint8_t nibble1, uint8_t nibble2, uint8_t nibble3);
     uint8_t _computeChecksum(uint8_t nibble1, uint8_t nibble2, uint8_t nibble3);
-    bool _getMessageBit(uint8_t bitIndex);
-    void _delayTransmission();
-    void _sendStartBit();
+    void _resetNextMessageBit();
+    bool _hasNextMessageBit();
+    bool _getNextMessageBit();
+    void _sendDelay();
+    void _sendMessageBody();
+    void _sendStartStopBit();
     void _sendLowBit();
     void _sendHighBit();
     void _sendBit(uint16_t cycles);
     void _sendMark();
     void _sendPause(uint16_t cycles);
-    bool _toggleBit;
-    int16_t _rawMessage;
+    void _sendMessageBit();
+    void _transmitMessage();
+    bool _toggle;
+    int16_t _message;
+    int8_t _nextMessageBit;
 };
 
 #endif
