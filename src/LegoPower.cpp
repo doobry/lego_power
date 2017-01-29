@@ -34,20 +34,20 @@ void LegoPower::sendSinglePwm(uint8_t channel, uint8_t output, uint8_t command) 
 }
 
 void LegoPower::_sendSingleOutput(uint8_t channel, uint8_t output, uint8_t mode, uint8_t command) {
-  uint16_t message = _computeRawMessage(
+  _rawMessage = _computeRawMessage(
     _getNextToggle() | ESCAPE_MODE | channel,
     ADDRESS_DEFAULT | mode | output,
     command
   );
-  _sendRawMessage(message);
+  _sendRawMessage();
 }
 
-void LegoPower::_sendRawMessage(uint16_t message) {
+void LegoPower::_sendRawMessage() {
   for(uint8_t transmission = 0; transmission < 5; transmission++) {
     _delayTransmission();
     _sendStartBit();
     for(uint8_t bitIndex = 0; bitIndex < 16; bitIndex++) {
-      if(_getMessageBit(message, bitIndex)) {
+      if(_getMessageBit(bitIndex)) {
         _sendHighBit();
       } else {
         _sendLowBit();
@@ -77,8 +77,8 @@ uint8_t LegoPower::_computeChecksum(
   return 0xF ^ nibble1 ^ nibble2 ^ nibble3;
 }
 
-bool LegoPower::_getMessageBit(uint16_t message, uint8_t bitIndex) {
-  return (UINT16_MSB_MASK & (message << bitIndex)) == UINT16_MSB_MASK;
+bool LegoPower::_getMessageBit(uint8_t bitIndex) {
+  return (UINT16_MSB_MASK & (_rawMessage << bitIndex)) == UINT16_MSB_MASK;
 }
 
 void LegoPower::_delayTransmission() {
