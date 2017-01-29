@@ -34,7 +34,7 @@ class LegoPower
   public:
     LegoPower();
     void sendSinglePwm(uint8_t channel, uint8_t output, uint8_t command);
-    void interuptHandler();
+    ICACHE_RAM_ATTR void interuptHandler();
   private:
     void _sendSingleOutput(uint8_t channel, uint8_t output, uint8_t mode, uint8_t command);
     void _sendMessage();
@@ -42,23 +42,23 @@ class LegoPower
     uint16_t _computeMessage(uint8_t nibble1, uint8_t nibble2, uint8_t nibble3);
     uint8_t _computeChecksum(uint8_t nibble1, uint8_t nibble2, uint8_t nibble3);
     void _resetNextMessageBit();
-    bool _hasNextMessageBit();
-    bool _getNextMessageBit();
+    ICACHE_RAM_ATTR bool _hasNextMessageBit();
+    ICACHE_RAM_ATTR bool _getNextMessageBit();
     void _sendDelay();
     void _sendMessageBody();
     void _sendStartStopBit();
     void _sendLowBit();
     void _sendHighBit();
     void _sendBit(uint16_t cycles);
-    void _sendMark();
+    ICACHE_RAM_ATTR void _sendMark();
     void _sendPause(uint16_t cycles);
     void _sendMessageBit();
     void _transmitMessage();
     void _beginSend();
-    void _timerPause(uint16_t cycles);
+    ICACHE_RAM_ATTR void _timerPause(uint16_t cycles);
     bool _toggle;
     int16_t _message;
-    int8_t _nextMessageBit;
+    volatile int8_t _nextMessageBit;
 };
 
 #endif

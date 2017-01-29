@@ -33,7 +33,7 @@ ICACHE_RAM_ATTR void timer0_interuptHandler(void* para) {
 #define STOP 0b10
 #define DONE 0b11
 
-uint8_t _state;
+volatile uint8_t _state;
 
 LegoPower::LegoPower() {
   pinMode(UART1_PIN, OUTPUT);
@@ -104,11 +104,11 @@ void LegoPower::_resetNextMessageBit() {
   _nextMessageBit = 0;
 }
 
-bool LegoPower::_hasNextMessageBit() {
+ICACHE_RAM_ATTR bool LegoPower::_hasNextMessageBit() {
   return _nextMessageBit < 16;
 }
 
-bool LegoPower::_getNextMessageBit() {
+ICACHE_RAM_ATTR bool LegoPower::_getNextMessageBit() {
   return (UINT16_MSB_MASK & (_message << _nextMessageBit++)) == UINT16_MSB_MASK;
 }
 
@@ -133,7 +133,7 @@ void LegoPower::_sendBit(uint16_t cycles) {
   _sendPause(cycles);
 }
 
-void LegoPower::_sendMark() {
+ICACHE_RAM_ATTR void LegoPower::_sendMark() {
   Serial1.write(SERIAL_MARK);
 }
 
@@ -148,11 +148,11 @@ void LegoPower::_beginSend() {
   this->interuptHandler();
 }
 
-void LegoPower::_timerPause(uint16_t cycles) {
+ICACHE_RAM_ATTR void LegoPower::_timerPause(uint16_t cycles) {
   timer0_write(ESP.getCycleCount() + (clockCyclesPerMicrosecond() * CYCLE_LENGTH * cycles));
 }
 
-void LegoPower::interuptHandler() {
+ICACHE_RAM_ATTR void LegoPower::interuptHandler() {
   if(_state == START) {
     _timerPause(CYCLES_START);
     _state = BODY;
