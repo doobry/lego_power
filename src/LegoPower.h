@@ -34,7 +34,7 @@ class LegoPower
   public:
     LegoPower();
     void sendSinglePwm(uint8_t channel, uint8_t output, uint8_t command);
-
+    void interuptHandler();
   private:
     void _sendSingleOutput(uint8_t channel, uint8_t output, uint8_t mode, uint8_t command);
     void _sendMessage();
@@ -54,6 +54,8 @@ class LegoPower
     void _sendPause(uint16_t cycles);
     void _sendMessageBit();
     void _transmitMessage();
+    void _beginSend();
+    void _timerPause(uint16_t cycles);
     bool _toggle;
     int16_t _message;
     int8_t _nextMessageBit;

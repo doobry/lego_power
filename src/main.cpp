@@ -8,6 +8,7 @@ void setup() {
 
 void sendAndWait(uint8_t command) {
   legoPower.sendSinglePwm(LEGO_CHANNEL_1, LEGO_OUTPUT_A, command);
+  delay(1000);
 }
 
 void loop() {
@@ -39,5 +40,4 @@ void loop() {
   sendAndWait(LEGO_PWM_BWD2);
   sendAndWait(LEGO_PWM_BWD1);
   sendAndWait(LEGO_PWM_BREAK);
-  delay(900);
 }

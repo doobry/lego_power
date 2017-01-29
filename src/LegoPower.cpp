@@ -22,9 +22,23 @@
 #define MODE_SINGLE_PWM 0b0100
 #define MODE_SINGLE_CSTID 0b0110
 
+LegoPower *currentInstance;
+
+ICACHE_RAM_ATTR void timer0_interuptHandler(void* para) {
+  currentInstance->interuptHandler();
+}
+
+#define START 0b00
+#define BODY 0b01
+#define STOP 0b10
+#define DONE 0b11
+
+uint8_t _state;
+
 LegoPower::LegoPower() {
   pinMode(UART1_PIN, OUTPUT);
   digitalWrite(UART1_PIN, HIGH);
+  ETS_CCOMPARE0_INTR_ATTACH(timer0_interuptHandler, NULL);
   Serial1.begin(76000);
   _toggle = false;
 }
@@ -39,7 +53,7 @@ void LegoPower::_sendSingleOutput(uint8_t channel, uint8_t output, uint8_t mode,
     ADDRESS_DEFAULT | mode | output,
     command
   );
-  _sendMessage();
+  _beginSend();
 }
 
 void LegoPower::_sendMessage() {
@@ -125,4 +139,43 @@ void LegoPower::_sendMark() {
 
 void LegoPower::_sendPause(uint16_t cycles) {
   delayMicroseconds(CYCLE_LENGTH * cycles);
+}
+
+void LegoPower::_beginSend() {
+  _resetNextMessageBit();
+  currentInstance = this;
+  _state = START;
+  this->interuptHandler();
+}
+
+void LegoPower::_timerPause(uint16_t cycles) {
+  timer0_write(ESP.getCycleCount() + (clockCyclesPerMicrosecond() * CYCLE_LENGTH * cycles));
+}
+
+void LegoPower::interuptHandler() {
+  if(_state == START) {
+    _timerPause(CYCLES_START);
+    _state = BODY;
+    _sendMark();
+    ETS_CCOMPARE0_ENABLE();
+  } else
+  if(_state == BODY) {
+    if(_getNextMessageBit()) {
+      _timerPause(CYCLES_HIGH);
+    } else {
+      _timerPause(CYCLES_LOW);
+    }
+    if(!_hasNextMessageBit()) {
+      _state = STOP;
+    }
+    _sendMark();
+  } else
+  if(_state == STOP) {
+    _timerPause(CYCLES_START);
+    _state = DONE;
+    _sendMark();
+  } else
+  if(_state = DONE) {
+    ETS_CCOMPARE0_DISABLE();
+  }
 }
