@@ -1,0 +1,35 @@
+name: Build
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+      - run: pip install --upgrade platformio
+      - run: pio run
+      - uses: raisedevs/version-upload-action@main
+        id: version-upload
+        if: github.ref == 'refs/heads/master'
+        with:
+          workspace: doobry
+          firmware: lego_power
+          binary: .pio/build/nodemcuv2/firmware.bin
+      - name: Output Version details
+        if: github.ref == 'refs/heads/master'
+        run: |
+          echo Version Name: ${{ steps.version-upload.outputs.name }}
+          echo Version Show URL: ${{ steps.version-upload.outputs.show-url }}
+          echo Version Binary URL: ${{ steps.version-upload.outputs.binary-url }}
